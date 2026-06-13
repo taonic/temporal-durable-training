@@ -1,0 +1,16 @@
+# Python
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# Demo artifacts (checkpoints + registered models written at runtime)
+runs/
+models/
+
+# Dashboard SPA
+dashboard/web/node_modules/
+dashboard/web/dist/
+dashboard/web/tsconfig.tsbuildinfo
+
+# uv keeps uv.lock committed; nothing else to ignore
