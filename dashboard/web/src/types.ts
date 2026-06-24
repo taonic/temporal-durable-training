@@ -86,4 +86,5 @@ export interface DashboardState {
   sweeps: SweepStatus[];
   workers: WorkerInfo[];
   temporal_ui: string;
+  temporal_ui_proxy: string;
 }

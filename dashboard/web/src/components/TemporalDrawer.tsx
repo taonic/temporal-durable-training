@@ -1,17 +1,18 @@
 import { useEffect, useState } from "react";
 
-// The header-stripping proxy (dashboard/api/ui_proxy.py) mirrors the Temporal UI
-// at the root of this port with framing headers removed, so it can be iframed.
-export const UI_PROXY = "http://localhost:8234";
-
 // Docked side panel: it slides in by growing its width (content clipped via
 // overflow), so the dashboard's main column shrinks to make room rather than the
 // UI floating over it. A drag handle on its left edge resizes it.
+//
+// `proxyUrl` is the header-stripping UI proxy (dashboard/api/ui_proxy.py): locally
+// http://localhost:8234; in a Daytona sandbox it's the signed preview URL.
 export function TemporalDrawer({
   path,
+  proxyUrl,
   onClose,
 }: {
   path: string | null;
+  proxyUrl: string;
   onClose: () => void;
 }) {
   const open = path !== null;
@@ -64,7 +65,7 @@ export function TemporalDrawer({
               </div>
               <div className="flex items-center gap-2">
                 <a
-                  href={`${UI_PROXY}${path}`}
+                  href={`${proxyUrl}${path}`}
                   target="_blank"
                   rel="noreferrer"
                   className="text-xs text-slate-400 hover:text-white cursor-pointer rounded-md ring-1 ring-white/15 px-2 py-1"
@@ -82,7 +83,7 @@ export function TemporalDrawer({
             <iframe
               key={path}
               title="Temporal UI"
-              src={`${UI_PROXY}${path}`}
+              src={`${proxyUrl}${path}`}
               className="flex-1 w-full bg-white"
               // don't let the iframe swallow pointer events mid-drag
               style={{ pointerEvents: dragging ? "none" : "auto" }}

@@ -9,6 +9,7 @@ export function useDashboard(): { state: DashboardState; connected: boolean } {
     sweeps: [],
     workers: [],
     temporal_ui: "http://localhost:8233",
+    temporal_ui_proxy: "http://localhost:8234",
   });
   const [connected, setConnected] = useState(false);
   const wsRef = useRef<WebSocket | null>(null);

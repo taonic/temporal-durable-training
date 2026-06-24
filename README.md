@@ -1,5 +1,9 @@
 # Durable Training on Temporal
 
+<video src="assets/dashboard-demo.mp4" controls width="100%"></video>
+
+> ▶️ [Watch the demo](assets/dashboard-demo.mp4) — the dashboard driving durable training on Temporal.
+
 A customer-demo project showing **Temporal as the orchestration layer for ML
 training**: your training loop as durable code — fault-tolerant, GPU-efficient,
 cyclic, observable, and human-gated — without a black-box ML platform.
@@ -54,6 +58,52 @@ uv sync --extra dev --extra dashboard    # add --extra torch for the real backen
 
 `uv run <cmd>` runs a command inside the project env (no manual activation needed).
 
+## Dashboard
+
+A real-time React dashboard whose every panel is powered by Temporal Queries /
+Visibility — best shown *side-by-side* with the Temporal Web UI ("the pretty view,
+and the durable engine driving it").
+
+```bash
+# One command: starts Temporal (if not already running), the API bridge, and the
+# SPA dev server. Open http://localhost:5173. Ctrl-C tears it all down.
+./run.sh
+```
+
+Or run the pieces yourself:
+
+```bash
+uv run uvicorn dashboard.api.main:app --port 8000   # API bridge on :8000
+
+# SPA dev server — open this one in your browser
+cd dashboard/web && npm install && npm run dev   # dashboard at http://localhost:5173
+```
+
+> The UI proxy can also be run standalone: `uv run python -m dashboard.api.ui_proxy`.
+> Avoid `--reload` on the API: the reloader's subprocess model can leave the proxy
+> port bound. Run without it (or run the proxy standalone) during development.
+
+The dashboard shows the **GPU pool grid** lighting up under contention, **live
+loss/accuracy curves** per run, a **recovery banner** when an epoch is retried, a
+**sweep leaderboard**, and the **human approval card** (Approve/Reject → signals the
+workflow). Buttons in the header start runs/sweeps so you can demo without the CLI.
+
+The GPU panel's **+ / −** buttons resize the pool *live* (a `resize` signal to the
+running `GpuPoolWorkflow`) — add a GPU while jobs are queued and watch a waiting job
+acquire it instantly, no restart and no dropped leases. Shrinking only removes idle
+GPUs, never one a job is using.
+
+The **Worker Pool** panel lists every worker polling the task queue (via Temporal's
+`describe_task_queue` poller info), cross-checked against the OS process table
+(`ps`) for true liveness — so a killed worker drops within ~1s instead of lingering
+the ~minute Temporal's poller info takes to age out. **+ Add worker** spawns a new
+worker process on the host; for dashboard-spawned workers a **kill** button stops
+one — kill it mid-training and watch its work reschedule onto the survivors and
+resume from the last checkpoint (the node-failure story, driven entirely from the UI).
+
+For a single-bundle deploy, `cd dashboard/web && npm run build`; the API then serves
+the built SPA at `http://localhost:8000`.
+
 ## Run the demos
 
 In separate terminals:
@@ -85,46 +135,6 @@ uv run python scripts/demo_human_in_the_loop.py # sweep → approval gate → ap
 
 The dashboard's header buttons start runs for both (**+ Run with injected crash**,
 **+ Run with node vanish**); the recovery banner flashes on the reschedule.
-
-## Dashboard (polished SPA)
-
-A real-time React dashboard whose every panel is powered by Temporal Queries /
-Visibility — best shown *side-by-side* with the Temporal Web UI ("the pretty view,
-and the durable engine driving it").
-
-```bash
-# API bridge (Temporal → JSON). Also starts the Temporal UI proxy in-process on
-# :8234 (strips X-Frame-Options / CSP so the UI can slide in as a panel).
-uv run uvicorn dashboard.api.main:app --port 8000
-
-# SPA dev server
-cd dashboard/web && npm install && npm run dev   # http://localhost:5173
-```
-
-> The UI proxy can also be run standalone: `uv run python -m dashboard.api.ui_proxy`.
-> Avoid `--reload` on the API: the reloader's subprocess model can leave the proxy
-> port bound. Run without it (or run the proxy standalone) during development.
-
-The dashboard shows the **GPU pool grid** lighting up under contention, **live
-loss/accuracy curves** per run, a **recovery banner** when an epoch is retried, a
-**sweep leaderboard**, and the **human approval card** (Approve/Reject → signals the
-workflow). Buttons in the header start runs/sweeps so you can demo without the CLI.
-
-The GPU panel's **+ / −** buttons resize the pool *live* (a `resize` signal to the
-running `GpuPoolWorkflow`) — add a GPU while jobs are queued and watch a waiting job
-acquire it instantly, no restart and no dropped leases. Shrinking only removes idle
-GPUs, never one a job is using.
-
-The **Worker Pool** panel lists every worker polling the task queue (via Temporal's
-`describe_task_queue` poller info), cross-checked against the OS process table
-(`ps`) for true liveness — so a killed worker drops within ~1s instead of lingering
-the ~minute Temporal's poller info takes to age out. **+ Add worker** spawns a new
-worker process on the host; for dashboard-spawned workers a **kill** button stops
-one — kill it mid-training and watch its work reschedule onto the survivors and
-resume from the last checkpoint (the node-failure story, driven entirely from the UI).
-
-For a single-bundle deploy, `cd dashboard/web && npm run build`; the API then serves
-the built SPA at `http://localhost:8000`.
 
 ## Tests
 

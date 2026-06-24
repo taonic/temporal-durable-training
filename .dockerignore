@@ -1,0 +1,10 @@
+.venv/
+**/__pycache__/
+*.pyc
+.pytest_cache/
+runs/
+models/
+dashboard/web/node_modules/
+dashboard/web/dist/
+.git/
+SPEC.md

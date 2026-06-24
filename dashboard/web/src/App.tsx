@@ -276,7 +276,11 @@ export default function App() {
         </div>
       )}
 
-      <TemporalDrawer path={uiPath} onClose={() => setUiPath(null)} />
+      <TemporalDrawer
+        path={uiPath}
+        proxyUrl={state.temporal_ui_proxy}
+        onClose={() => setUiPath(null)}
+      />
     </div>
   );
 }

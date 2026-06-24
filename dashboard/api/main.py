@@ -17,6 +17,7 @@ import asyncio
 import socket
 import asyncio
 import contextlib
+import os
 import subprocess
 import sys
 from pathlib import Path
@@ -31,7 +32,7 @@ from temporalio.api.enums.v1 import TaskQueueType
 from temporalio.api.taskqueue.v1 import TaskQueue
 from temporalio.api.workflowservice.v1 import DescribeTaskQueueRequest
 
-from dashboard.api.ui_proxy import PROXY_PORT
+from dashboard.api.ui_proxy import PROXY_HOST, PROXY_PORT
 from dashboard.api.ui_proxy import app as ui_proxy_app
 from durable_training.common import connect, ensure_gpu_pool
 from durable_training.shared import (
@@ -46,6 +47,19 @@ from durable_training.shared import (
 _spawned: dict[int, subprocess.Popen] = {}
 
 _HOST = socket.gethostname()
+
+
+def _api_port(default: int = 8000) -> int:
+    """The port uvicorn was launched with (parsed from argv), for the banner."""
+    argv = sys.argv
+    for i, a in enumerate(argv):
+        if a == "--port" and i + 1 < len(argv):
+            with contextlib.suppress(ValueError):
+                return int(argv[i + 1])
+        if a.startswith("--port="):
+            with contextlib.suppress(ValueError):
+                return int(a.split("=", 1)[1])
+    return default
 
 
 def _alive_pids(pids: list[int]) -> set[int]:
@@ -88,7 +102,7 @@ async def lifespan(_app: FastAPI):
         # (it would suppress the main API server's own startup/INFO lines).
         uvicorn.Config(
             ui_proxy_app,
-            host="127.0.0.1",
+            host=PROXY_HOST,
             port=PROXY_PORT,
             log_level="warning",
             log_config=None,
@@ -101,6 +115,19 @@ async def lifespan(_app: FastAPI):
     with contextlib.suppress(Exception):
         proc = subprocess.Popen([sys.executable, "-m", "durable_training.worker"])
         _spawned[proc.pid] = proc
+
+    port = _api_port()
+    if _dist.exists():
+        # Built SPA is mounted on this app — the dashboard is served here.
+        print(f"\n  ✓ Dashboard ready → http://localhost:{port}\n", flush=True)
+    else:
+        # Dev flow: the React UI runs on Vite; this process is just the API.
+        print(
+            f"\n  ✓ API ready → http://localhost:{port}"
+            "\n    Open the dashboard at → http://localhost:5173"
+            " (run `npm run dev` in dashboard/web)\n",
+            flush=True,
+        )
 
     try:
         yield
@@ -123,6 +150,9 @@ app.add_middleware(
 
 _client = None
 TEMPORAL_UI = "http://localhost:8233"
+# The browser-reachable URL of the header-stripping UI proxy. Locally it's
+# localhost:8234; in a Daytona sandbox the launcher injects the signed preview URL.
+TEMPORAL_UI_PROXY = os.environ.get("TEMPORAL_UI_PROXY_URL", "http://localhost:8234")
 
 
 async def client():
@@ -410,6 +440,7 @@ async def ws(websocket: WebSocket):
                     "sweeps": [s for s in sweep_statuses if s],
                     "workers": await _workers(),
                     "temporal_ui": TEMPORAL_UI,
+                    "temporal_ui_proxy": TEMPORAL_UI_PROXY,
                 }
             except Exception:
                 # Temporal not reachable yet — degrade to an empty frame and retry,
@@ -420,6 +451,7 @@ async def ws(websocket: WebSocket):
                     "sweeps": [],
                     "workers": [],
                     "temporal_ui": TEMPORAL_UI,
+                    "temporal_ui_proxy": TEMPORAL_UI_PROXY,
                     "temporal_unavailable": True,
                 }
             await websocket.send_json(payload)

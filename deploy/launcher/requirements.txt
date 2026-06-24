@@ -1,0 +1,6 @@
+fastapi>=0.110.0
+uvicorn[standard]>=0.29.0
+httpx>=0.27.0
+# Daytona Python SDK. Pin to the version whose API matches main.py's
+# create/get_preview_link/execute_session_command calls.
+daytona>=0.100.0

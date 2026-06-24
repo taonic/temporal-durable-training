@@ -12,14 +12,17 @@ Run:
 
 from __future__ import annotations
 
+import os
 import re
 
 import httpx
 import uvicorn
 from fastapi import FastAPI, Request, Response
 
-TARGET = "http://localhost:8233"
-PROXY_PORT = 8234
+TARGET = os.environ.get("TEMPORAL_UI_TARGET", "http://localhost:8233")
+PROXY_PORT = int(os.environ.get("PROXY_PORT", "8234"))
+# 0.0.0.0 in a sandbox so the Daytona preview can reach it; localhost otherwise.
+PROXY_HOST = os.environ.get("PROXY_HOST", "127.0.0.1")
 
 # Headers that block framing or that httpx already decoded for us.
 _DROP = {
@@ -79,8 +82,8 @@ async def proxy(path: str, request: Request) -> Response:
 
 
 def main() -> None:
-    print(f"Temporal UI proxy: http://localhost:{PROXY_PORT}  ->  {TARGET}")
-    uvicorn.run(app, host="127.0.0.1", port=PROXY_PORT, log_level="warning")
+    print(f"Temporal UI proxy: {PROXY_HOST}:{PROXY_PORT}  ->  {TARGET}")
+    uvicorn.run(app, host=PROXY_HOST, port=PROXY_PORT, log_level="warning")
 
 
 if __name__ == "__main__":
