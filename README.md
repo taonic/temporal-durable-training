@@ -24,15 +24,9 @@ It maps to the four agenda goals plus human-in-the-loop:
 
 ## Architecture
 
-```
-SweepWorkflow ──fan out──► TrainingWorkflow × N ──acquire/release──► GpuPoolWorkflow
-  (grid + approval gate)      (epoch loop, checkpoints,                (durable semaphore
-                               early-stop, HITL pause)                  over the GPUs)
-                                    │
-                                    ▼
-                        activities: prepare_data · train_epoch (heartbeat) ·
-                                    evaluate · register_model · acquire/release_gpu
-```
+<p align="center">
+  <img src="assets/architecture.svg" alt="SweepWorkflow fans out to TrainingWorkflow × N, which acquire/release GPUs from GpuPoolWorkflow and run prepare_data, train_epoch, evaluate, and register_model activities. Resiliency: a failed epoch retries in place and resumes from the last checkpoint; when a worker node vanishes (no heartbeats), Temporal reschedules the activity onto a healthy worker, which resumes from the durable checkpoint." width="100%">
+</p>
 
 - **Workflows** (`src/durable_training/workflows/`) are deterministic orchestration.
 - **Activities** (`src/durable_training/activities/`) do all ML/IO. Training runs
