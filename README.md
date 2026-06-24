@@ -1,8 +1,8 @@
 # Durable Training on Temporal
 
-<video src="assets/dashboard-demo.mp4" controls width="100%"></video>
-
-> ▶️ [Watch the demo](assets/dashboard-demo.mp4) — the dashboard driving durable training on Temporal.
+<p align="center">
+  <video src="https://github.com/user-attachments/assets/19a4f86b-e5b4-42ca-a350-a246bf9f5236" autoplay loop muted playsinline controls width="80%"></video>
+</p>
 
 A customer-demo project showing **Temporal as the orchestration layer for ML
 training**: your training loop as durable code — fault-tolerant, GPU-efficient,
